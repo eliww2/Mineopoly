@@ -18,7 +18,19 @@ public class AssignmentStrategy implements MinePlayerStrategy {
     private Point charger, market, diamond, ruby, emerald;
     private int closestCharge, closestMarket, closestDiamond, closestRuby, closestEmerald;
 
-
+    /**
+     *
+     * @param boardSize The length and width of the square game board
+     * @param maxInventorySize The maximum number of items that your player can carry at one time
+     * @param maxCharge The amount of charge your robot starts with (number of tile moves before needing to recharge)
+     * @param winningScore The first player to reach this score wins the round
+     * @param startingBoard A view of the GameBoard at the start of the game. You can use this to pre-compute fixed
+     *                       information, like the locations of market or recharge tiles
+     * @param startTileLocation A Point representing your starting location in (x, y) coordinates
+     *                              (0, 0) is the bottom left and (boardSize - 1, boardSize - 1) is the top right
+     * @param isRedPlayer True if this strategy is the red player, false otherwise
+     * @param random A random number generator, if your strategy needs random numbers you should use this.
+     */
     @Override
     public void initialize(int boardSize, int maxInventorySize, int maxCharge, int winningScore,
                            PlayerBoardView startingBoard, Point startTileLocation, boolean isRedPlayer, Random random) {
@@ -34,6 +46,120 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         closestItems();
     }
 
+    /**
+     *
+     * @param boardView A PlayerBoardView object representing all the information about the board and the other player
+     *                   that your strategy is allowed to access
+     * @param economy The GameEngine's economy object which holds current prices for resources
+     * @param currentCharge The amount of charge your robot has (number of tile moves before needing to recharge)
+     * @param isRedTurn For use when two players attempt to move to the same spot on the same turn
+     *                   If true: The red player will move to the spot, and the blue player will do nothing
+     *                   If false: The blue player will move to the spot, and the red player will do nothing
+     * @return
+     */
+    @Override
+    public TurnAction getTurnAction(PlayerBoardView boardView, Economy economy, int currentCharge, boolean isRedTurn) {
+
+        Point myLocation = board.getYourLocation();
+        board = boardView;
+        closestItems();
+
+        if (board.getTileTypeAtLocation(myLocation) == TileType.RECHARGE && currentCharge < MAX_CHARGE) {
+            return null;
+        } else if (itemsHeld == MAX_ITEMS) {
+            return goToDestination(market);
+        } else if (board.getItemsOnGround().get(myLocation).size() > 0) {
+            return TurnAction.PICK_UP_RESOURCE;
+        } else if (currentCharge < closestCharge) {
+            return goToDestination(charger);
+        } else if (
+                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_DIAMOND||
+                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_EMERALD ||
+                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_RUBY) {
+            return TurnAction.MINE;
+        }
+        return goToDestination(bestResource(economy));
+    }
+
+    /**
+     *
+     * @param itemReceived The item received from the player's TurnAction on their last turn
+     */
+    @Override
+    public void onReceiveItem(InventoryItem itemReceived) {
+        itemsHeld++;
+    }
+
+    /**
+     *
+     * @param totalSellPrice The combined sell price for all items in your strategy's inventory
+     */
+    @Override
+    public void onSoldInventory(int totalSellPrice) {
+        itemsHeld = 0;
+    }
+
+    /**
+     *
+     * @return
+     */
+    @Override
+    public String getName() { return "SwagMoney"; }
+
+    /**
+     *
+     * @param pointsScored The total number of points this strategy scored
+     * @param opponentPointsScored The total number of points the opponent's strategy scored
+     */
+    @Override
+    public void endRound(int pointsScored, int opponentPointsScored) {    }
+
+    /**
+     *
+     * @param economy
+     * @return
+     */
+    private Point bestResource(Economy economy) {
+        int diamondWorth = economy.getCurrentPrices().get(ItemType.DIAMOND);
+        int emeraldWorth = economy.getCurrentPrices().get(ItemType.EMERALD);
+        int rubyWorth = economy.getCurrentPrices().get(ItemType.RUBY);
+        if (diamondWorth > emeraldWorth && diamondWorth > rubyWorth) {
+            closestDiamond = Integer.MAX_VALUE;
+            return diamond;
+        } else if (emeraldWorth > diamondWorth && emeraldWorth > rubyWorth) {
+            closestEmerald = Integer.MAX_VALUE;
+            return emerald;
+        } else if (rubyWorth > diamondWorth && rubyWorth > emeraldWorth) {
+            closestRuby = Integer.MAX_VALUE;
+            return ruby;
+        }
+        return null;
+    }
+
+    /**
+     *
+     * @param destination
+     * @return
+     */
+    private TurnAction goToDestination(Point destination) {
+        if (destination == null) {
+            return null;
+        }
+        if (board.getYourLocation().x < destination.x) {
+            return TurnAction.MOVE_RIGHT;
+        } else if (board.getYourLocation().x > destination.x) {
+            return TurnAction.MOVE_LEFT;
+        } else if (board.getYourLocation().y < destination.y) {
+            return TurnAction.MOVE_UP;
+        } else if (board.getYourLocation().y > destination.y) {
+            return TurnAction.MOVE_DOWN;
+        }
+        return null;
+    }
+
+    /**
+     *
+     */
     private void closestItems() {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
@@ -81,76 +207,4 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         }
     }
 
-    @Override
-    public TurnAction getTurnAction(PlayerBoardView boardView, Economy economy, int currentCharge, boolean isRedTurn) {
-
-        Point myLocation = board.getYourLocation();
-        board = boardView;
-        closestItems();
-
-        if (board.getTileTypeAtLocation(myLocation) == TileType.RECHARGE && currentCharge < MAX_CHARGE) {
-            return null;
-        } else if (itemsHeld == MAX_ITEMS) {
-            return goToDestination(market);
-        } else if (board.getItemsOnGround().get(myLocation).size() > 0) {
-            return TurnAction.PICK_UP_RESOURCE;
-        } else if (currentCharge < closestCharge) {
-            return goToDestination(charger);
-        } else if (
-                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_DIAMOND||
-                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_EMERALD ||
-                board.getTileTypeAtLocation(myLocation) == TileType.RESOURCE_RUBY) {
-            return TurnAction.MINE;
-        }
-        return goToDestination(bestResource(economy));
-    }
-
-    private TurnAction goToDestination(Point destination) {
-        if (destination == null) {
-            return null;
-        }
-        if (board.getYourLocation().x < destination.x) {
-            return TurnAction.MOVE_RIGHT;
-        } else if (board.getYourLocation().x > destination.x) {
-            return TurnAction.MOVE_LEFT;
-        } else if (board.getYourLocation().y < destination.y) {
-            return TurnAction.MOVE_UP;
-        } else if (board.getYourLocation().y > destination.y) {
-            return TurnAction.MOVE_DOWN;
-        }
-        return null;
-    }
-
-    private Point bestResource(Economy economy) {
-        int diamondWorth = economy.getCurrentPrices().get(ItemType.DIAMOND);
-        int emeraldWorth = economy.getCurrentPrices().get(ItemType.EMERALD);
-        int rubyWorth = economy.getCurrentPrices().get(ItemType.RUBY);
-        if (diamondWorth > emeraldWorth && diamondWorth > rubyWorth) {
-            closestDiamond = Integer.MAX_VALUE;
-            return diamond;
-        } else if (emeraldWorth > diamondWorth && emeraldWorth > rubyWorth) {
-            closestEmerald = Integer.MAX_VALUE;
-            return emerald;
-        } else if (rubyWorth > diamondWorth && rubyWorth > emeraldWorth) {
-             closestRuby = Integer.MAX_VALUE;
-        return ruby;
-        }
-        return null;
-    }
-
-    @Override
-    public void onReceiveItem(InventoryItem itemReceived) {
-        itemsHeld++;
-    }
-
-    @Override
-    public void onSoldInventory(int totalSellPrice) {
-        itemsHeld = 0;
-    }
-
-    @Override
-    public String getName() { return "SwagMoney"; }
-
-    @Override
-    public void endRound(int pointsScored, int opponentPointsScored) {    }
 }
