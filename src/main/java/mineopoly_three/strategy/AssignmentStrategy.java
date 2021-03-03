@@ -18,7 +18,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
     private Point charger, market, diamond, ruby, emerald;
     private int closestCharge, closestMarket, closestDiamond, closestRuby, closestEmerald;
 
-    /**Takes in the variables so the robot knows what to do each turn and the state of everthing around him
+    /**Takes in the variables so the robot knows what to do each turn and the state of everything around him
      *
      * @param boardSize The length and width of the square game board
      * @param maxInventorySize The maximum number of items that your player can carry at one time
@@ -141,7 +141,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
      * @param destination where you would like to go
      * @return the direction you would like to go.
      */
-    private TurnAction goToDestination(Point destination) {
+    public TurnAction goToDestination(Point destination) {
         if (destination == null) {
             return null;
         }
@@ -159,7 +159,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
 
     /** This updates where the closest market, charger, and each of the gemstones are.
      */
-    private void closestItems() {
+    public void closestItems() {
         for (int row = 0; row < BOARD_SIZE; row++) {
             for (int col = 0; col < BOARD_SIZE; col++) {
                 if (board.getTileTypeAtLocation(row, col) == TileType.RECHARGE
@@ -205,5 +205,14 @@ public class AssignmentStrategy implements MinePlayerStrategy {
             }
         }
     }
+
+    //testing methods
+    public void setItemsHeld(int num) {
+        itemsHeld = num;
+    }
+
+    public int getItemsHeld() { return itemsHeld; }
+
+    public int getClosestCharge() { return closestCharge; }
 
 }
