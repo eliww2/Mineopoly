@@ -18,7 +18,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
     private Point charger, market, diamond, ruby, emerald;
     private int closestCharge, closestMarket, closestDiamond, closestRuby, closestEmerald;
 
-    /**
+    /**Takes in the variables so the robot knows what to do each turn and the state of everthing around him
      *
      * @param boardSize The length and width of the square game board
      * @param maxInventorySize The maximum number of items that your player can carry at one time
@@ -46,7 +46,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         closestItems();
     }
 
-    /**
+    /**Determines what needs to be done and what function needs to be called to do it.
      *
      * @param boardView A PlayerBoardView object representing all the information about the board and the other player
      *                   that your strategy is allowed to access
@@ -55,11 +55,10 @@ public class AssignmentStrategy implements MinePlayerStrategy {
      * @param isRedTurn For use when two players attempt to move to the same spot on the same turn
      *                   If true: The red player will move to the spot, and the blue player will do nothing
      *                   If false: The blue player will move to the spot, and the red player will do nothing
-     * @return
+     * @return the action to take this turn.
      */
     @Override
     public TurnAction getTurnAction(PlayerBoardView boardView, Economy economy, int currentCharge, boolean isRedTurn) {
-
         Point myLocation = board.getYourLocation();
         board = boardView;
         closestItems();
@@ -81,7 +80,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         return goToDestination(bestResource(economy));
     }
 
-    /**
+    /** Modifies the itemsHeld variable so the robot knows how full his inventory is.
      *
      * @param itemReceived The item received from the player's TurnAction on their last turn
      */
@@ -90,7 +89,8 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         itemsHeld++;
     }
 
-    /**
+    /** Resets the itemsHeldVariable when items are sold.
+     *  Since the auto-miner is no part of this strategy its okay to reset.
      *
      * @param totalSellPrice The combined sell price for all items in your strategy's inventory
      */
@@ -101,12 +101,12 @@ public class AssignmentStrategy implements MinePlayerStrategy {
 
     /**
      *
-     * @return
+     * @return name for tournament.
      */
     @Override
     public String getName() { return "SwagMoney"; }
 
-    /**
+    /** not used.
      *
      * @param pointsScored The total number of points this strategy scored
      * @param opponentPointsScored The total number of points the opponent's strategy scored
@@ -114,10 +114,10 @@ public class AssignmentStrategy implements MinePlayerStrategy {
     @Override
     public void endRound(int pointsScored, int opponentPointsScored) {    }
 
-    /**
+    /** Helper method that determines which gem point is most worth going to get
      *
-     * @param economy
-     * @return
+     * @param economy stores the price of each gemstone.
+     * @return which point the best resource is at.
      */
     private Point bestResource(Economy economy) {
         int diamondWorth = economy.getCurrentPrices().get(ItemType.DIAMOND);
@@ -136,10 +136,10 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         return null;
     }
 
-    /**
+    /** Takes in the destination and gives you the direction you need to go to get there.
      *
-     * @param destination
-     * @return
+     * @param destination where you would like to go
+     * @return the direction you would like to go.
      */
     private TurnAction goToDestination(Point destination) {
         if (destination == null) {
@@ -157,8 +157,7 @@ public class AssignmentStrategy implements MinePlayerStrategy {
         return null;
     }
 
-    /**
-     *
+    /** This updates where the closest market, charger, and each of the gemstones are.
      */
     private void closestItems() {
         for (int row = 0; row < BOARD_SIZE; row++) {
